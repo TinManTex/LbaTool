@@ -117,7 +117,7 @@ namespace LbaTool
                         }
                     } else
                     {
-                        WriteToXml(lba, Path.GetFileNameWithoutExtension(lbaPath) + ".lba.xml");
+                        WriteToXml(lba, Path.Combine(Path.GetDirectoryName(lbaPath), Path.GetFileNameWithoutExtension(lbaPath) + ".lba.xml"));
                     }
                 } else
                     {
