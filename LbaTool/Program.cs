@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
@@ -12,19 +13,38 @@ namespace LbaTool
     internal static class Program
     {
         //tex DEBUGNOW think through these names
-        private const string DefaultNameDictionaryFileName = "lba_name_dictionary.txt";
+        private const string DefaultNameDictionaryFileName = "lba_locatorname_dictionary.txt";
         private const string DefaultDataSetDictionaryFileName = "lba_dataset_dictionary.txt";
         private const string DefaultHashMatchOutputFileName = "lba_hash_matches.txt";
+        //TODO: output hashes to dictionary project layout instead of lbafilepath_bleh
+        //dictionaryProjectPath
+        //gameId
+        //internalPath ? one way would be to have inputpath arg be an Assetspath folder, but that's kind of restrictive
+        //in this case just substring last /Assets (because lbas are in fpks the path might be chunk_0\Assets\..pack\.._fpk\Assets)
 
         private static void Main(string[] args)
         {
+            string exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            Directory.SetCurrentDirectory(exeDir);
+
             var hashManager = new HashManager();
 
             // Read hash dictionaries
             if (File.Exists(DefaultNameDictionaryFileName))
             {
                 hashManager.StrCode32LookupTable = MakeHashLookupTableFromFile(DefaultNameDictionaryFileName, FoxHash.Type.StrCode32);
+            }
+            else
+            {
+                Console.WriteLine($"WARNING: could not find dictionary {DefaultNameDictionaryFileName}");
+            }
+            if (File.Exists(DefaultDataSetDictionaryFileName))
+            {
                 hashManager.PathCode32LookupTable = MakeHashLookupTableFromFile(DefaultDataSetDictionaryFileName, FoxHash.Type.PathCode32);
+            }
+            else
+            {
+                Console.WriteLine($"WARNING: could not find dictionary {DefaultDataSetDictionaryFileName}");
             }
 
             List<string> files = new List<string>();
@@ -61,7 +81,7 @@ namespace LbaTool
                 if (fileExtension.Equals(".xml", StringComparison.OrdinalIgnoreCase))
                 {
                     LbaFile lba = ReadFromXml(lbaPath);
-                    WriteToBinary(lba, Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(lbaPath)) + ".lba");
+                    WriteToBinary(lba, Path.Combine(Path.GetDirectoryName(lbaPath), Path.GetFileNameWithoutExtension(lbaPath)));
                 }
                 else if (fileExtension.Equals(".lba", StringComparison.OrdinalIgnoreCase))
                 {
@@ -100,14 +120,14 @@ namespace LbaTool
                         {
                             List<string> hashes = locatorNamesUnique.ToList<string>();
                             hashes.Sort();
-                            string outputPath = Path.Combine(fileDirectory, string.Format("{0}_locatorNameHashes.txt", Path.GetFileName(lbaPath)));
+                            string outputPath = Path.Combine(fileDirectory, string.Format("{0}_locatorName_StrCode32.txt", Path.GetFileName(lbaPath)));
                             File.WriteAllLines(outputPath, hashes.ToArray());
                         }
                         if (dataSetsUnique.Count > 0)
                         {
                             List<string> hashes = dataSetsUnique.ToList<string>();
                             hashes.Sort();
-                            string outputPath = Path.Combine(fileDirectory, string.Format("{0}_dataSetHashes.txt", Path.GetFileName(lbaPath)));
+                            string outputPath = Path.Combine(fileDirectory, string.Format("{0}_dataSet_PathFileNameCode32.txt", Path.GetFileName(lbaPath)));
                             File.WriteAllLines(outputPath, hashes.ToArray());
                         }
                     }
@@ -123,7 +143,7 @@ namespace LbaTool
             }
 
             // Write hash matches output
-            //WriteHashMatchesToFile(DefaultHashMatchOutputFileName, hashManager); //tex OFF
+            //WriteHashMatchesToFile(DefaultHashMatchOutputFileName, hashManager); //tex OFF needs to be split into the hash types to be useful, and shifted to a per-file {fileName}_hash_matches.txt -^-, otherwise the validation at mgsv-lookup-strings should have it covered
         }
 
         public static void WriteToBinary(LbaFile lba, string path)
