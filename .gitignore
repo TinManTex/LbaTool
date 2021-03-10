@@ -1,2 +1,5 @@
 
-.vs/LbaTool/v14/.suo
+.vs/*
+LbaTool/obj/*
+LbaTool/bin/*
+packages/*
