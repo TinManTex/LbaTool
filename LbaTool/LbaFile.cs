@@ -37,19 +37,19 @@ namespace LbaTool
                 {
                     case LocatorType.Type0:
                         ILocator locator0 = new LocatorType0();
-                        locator0.Read(reader, hashManager.HashLookupTable, hashManager.OnHashIdentified);
+                        locator0.Read(reader, hashManager.StrCode32LookupTable, hashManager.OnHashIdentified);
                         Locators.Add(locator0);
                         hasFooter = locator0.HasFooter;
                         break;
                     case LocatorType.Type2:
                         ILocator locator2 = new LocatorType2();
-                        locator2.Read(reader, hashManager.HashLookupTable, hashManager.OnHashIdentified); ;
+                        locator2.Read(reader, hashManager.StrCode32LookupTable, hashManager.OnHashIdentified); ;
                         Locators.Add(locator2);
                         hasFooter = locator2.HasFooter;
                         break;
                     case LocatorType.Type3:
                         ILocator locator3 = new LocatorType3();
-                        locator3.Read(reader, hashManager.HashLookupTable, hashManager.OnHashIdentified);
+                        locator3.Read(reader, hashManager.StrCode32LookupTable, hashManager.OnHashIdentified);
                         Locators.Add(locator3);
                         hasFooter = locator3.HasFooter;
                         break;
@@ -63,7 +63,7 @@ namespace LbaTool
             {
                 foreach (ILocator locator in Locators)
                 {
-                    locator.ReadFooter(reader, hashManager.HashLookupTable, hashManager.OnHashIdentified);
+                    locator.ReadFooter(reader, hashManager.StrCode32LookupTable, hashManager.PathCode32LookupTable, hashManager.OnHashIdentified);
                 }
             }
             

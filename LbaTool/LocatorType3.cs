@@ -11,12 +11,7 @@ namespace LbaTool
         public Vector4 Rotation { get; set; }
         public FoxHash LocatorName { get; set; }
         public FoxHash DataSet { get; set; }
-
-        // Still not sure what these values are.
-        public FoxHash Unknown30 { get; set; }
-        public FoxHash Unknown31 { get; set; }
-        public FoxHash Unknown32 { get; set; }
-        public FoxHash Unknown33 { get; set; }
+        public WideVector3 Scale { get; set; }
 
         public bool HasFooter => true;
 
@@ -28,37 +23,24 @@ namespace LbaTool
             Rotation = new Vector4();
             Rotation.Read(reader);
 
-            Unknown30 = new FoxHash();
-            Unknown30.Read(reader, hashLookupTable, hashIdentifiedCallback);
-
-            Unknown31 = new FoxHash();
-            Unknown31.Read(reader, hashLookupTable, hashIdentifiedCallback);
-
-            Unknown32 = new FoxHash();
-            Unknown32.Read(reader, hashLookupTable, hashIdentifiedCallback);
-
-            Unknown33 = new FoxHash();
-            Unknown33.Read(reader, hashLookupTable, hashIdentifiedCallback);
+            Scale = new WideVector3();
+            Scale.Read(reader);
         }
 
         public void Write(BinaryWriter writer)
         {
             Translation.Write(writer);
             Rotation.Write(writer);
-
-            Unknown30.Write(writer);
-            Unknown31.Write(writer);
-            Unknown32.Write(writer);
-            Unknown33.Write(writer);
+            Scale.Write(writer);
         }
 
-        public void ReadFooter(BinaryReader reader, Dictionary<uint, string> hashLookupTable, HashIdentifiedDelegate hashIdentifiedCallback)
+        public void ReadFooter(BinaryReader reader, Dictionary<uint, string> nameLookupTable, Dictionary<uint, string> datasetLookupTable, HashIdentifiedDelegate hashIdentifiedCallback)
         {
-            LocatorName = new FoxHash();
-            LocatorName.Read(reader, hashLookupTable, hashIdentifiedCallback);
+            LocatorName = new FoxHash(FoxHash.Type.StrCode32);
+            LocatorName.Read(reader, nameLookupTable, hashIdentifiedCallback);
 
-            DataSet = new FoxHash();
-            DataSet.Read(reader, hashLookupTable, hashIdentifiedCallback);
+            DataSet = new FoxHash(FoxHash.Type.PathCode32);
+            DataSet.Read(reader, datasetLookupTable, hashIdentifiedCallback);
         }
 
         public void WriteFooter(BinaryWriter writer)
@@ -69,23 +51,11 @@ namespace LbaTool
 
         public void ReadXml(XmlReader reader)
         {
-            LocatorName = new FoxHash();
+            LocatorName = new FoxHash(FoxHash.Type.StrCode32);
             LocatorName.ReadXml(reader, "name");
 
-            DataSet = new FoxHash();
+            DataSet = new FoxHash(FoxHash.Type.PathCode32);
             DataSet.ReadXml(reader, "dataSet");
-
-            Unknown30 = new FoxHash();
-            Unknown30.ReadXml(reader, "u30");
-
-            Unknown31 = new FoxHash();
-            Unknown31.ReadXml(reader, "u31");
-
-            Unknown32 = new FoxHash();
-            Unknown32.ReadXml(reader, "u32");
-
-            Unknown33 = new FoxHash();
-            Unknown33.ReadXml(reader, "u33");
 
             reader.ReadStartElement("locator");
 
@@ -96,16 +66,16 @@ namespace LbaTool
             Rotation = new Vector4();
             Rotation.ReadXml(reader);
             reader.Read();
+
+            Scale = new WideVector3();
+            Scale.ReadXml(reader);
+            reader.Read();
         }
 
         public void WriteXml(XmlWriter writer)
         {
             LocatorName.WriteXml(writer, "name");
             DataSet.WriteXml(writer, "dataSet");
-            Unknown30.WriteXml(writer, "u30");
-            Unknown31.WriteXml(writer, "u31");
-            Unknown32.WriteXml(writer, "u32");
-            Unknown33.WriteXml(writer, "u33");
 
             writer.WriteStartElement("translation");
             Translation.WriteXml(writer);
@@ -113,6 +83,10 @@ namespace LbaTool
 
             writer.WriteStartElement("rotation");
             Rotation.WriteXml(writer);
+            writer.WriteEndElement();
+
+            writer.WriteStartElement("scale");
+            Scale.WriteXml(writer);
             writer.WriteEndElement();
         }
 

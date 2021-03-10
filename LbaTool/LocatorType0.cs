@@ -28,7 +28,7 @@ namespace LbaTool
             Rotation.Write(writer);
         }
 
-        public void ReadFooter(BinaryReader reader, Dictionary<uint, string> hashLookupTable, HashIdentifiedDelegate hashIdentifiedCallback)
+        public void ReadFooter(BinaryReader reader, Dictionary<uint, string> hashLookupTable, Dictionary<uint, string> datasetLookupTable, HashIdentifiedDelegate hashIdentifiedCallback)
         {
             throw new InvalidOperationException("This locator format does not have a footer.");
         }

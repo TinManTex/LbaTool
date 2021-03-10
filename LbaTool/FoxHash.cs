@@ -7,9 +7,22 @@ namespace LbaTool
 {
     public class FoxHash
     {
+        public enum Type
+        {
+            StrCode32,
+            PathCode32
+        }
+
         public uint HashValue;
         public string StringLiteral = string.Empty;
-        public bool IsStringKnown => StringLiteral != string.Empty;
+        public bool IsStringKnown => !string.IsNullOrEmpty(this.StringLiteral);
+
+        private readonly Type type;
+
+        public FoxHash(Type type)
+        {
+            this.type = type;
+        }
 
         public virtual void Read(BinaryReader reader, Dictionary<uint, string> hashLookupTable, HashIdentifiedDelegate hashIdentifiedCallback)
         {
@@ -31,15 +44,22 @@ namespace LbaTool
         {
             string value = reader[label];
 
-            uint maybeHash;
-            if (uint.TryParse(value, out maybeHash))
+            if (uint.TryParse(value, out uint maybeHash))
             {
                 HashValue = maybeHash;
             }
             else
             {
                 StringLiteral = value;
-                HashValue = HashManager.HashString(StringLiteral);
+
+                if (this.type == Type.StrCode32)
+                {
+                    HashValue = HashManager.StrCode32(StringLiteral);
+                }
+                else
+                {
+                    HashValue = HashManager.PathCode32(StringLiteral);
+                }
             }
         }
 

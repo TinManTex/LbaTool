@@ -14,7 +14,7 @@ namespace LbaTool
         void Read(BinaryReader reader, Dictionary<uint, string> hashLookupTable, HashIdentifiedDelegate hashIdentifiedCallback);
         void Write(BinaryWriter writer);
 
-        void ReadFooter(BinaryReader reader, Dictionary<uint, string> hashLookupTable, HashIdentifiedDelegate hashIdentifiedCallback);
+        void ReadFooter(BinaryReader reader, Dictionary<uint, string> hashLookupTable, Dictionary<uint, string> datasetLookupTable, HashIdentifiedDelegate hashIdentifiedCallback);
         void WriteFooter(BinaryWriter writer);
     }
 }

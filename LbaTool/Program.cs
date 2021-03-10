@@ -9,19 +9,22 @@ using System.Xml;
 
 namespace LbaTool
 {
-    class Program
+    internal static class Program
     {
-        private const string DefaultDictionaryFileName = "lba_dictionary.txt";
-        private const string DefaultHashMatchOutputFileName = "lba hash matches.txt";
+    	//tex DEBUGNOW think through these names
+        private const string DefaultNameDictionaryFileName = "lba_name_dictionary.txt";
+        private const string DefaultDataSetDictionaryFileName = "lba_dataset_dictionary.txt";
+        private const string DefaultHashMatchOutputFileName = "lba_hash_matches.txt";
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             var hashManager = new HashManager();
 
-            // Read hash dictionary
-            if (File.Exists(DefaultDictionaryFileName))
+            // Read hash dictionaries
+            if (File.Exists(DefaultNameDictionaryFileName))
             {
-                hashManager.HashLookupTable = MakeHashLookupTableFromFile(DefaultDictionaryFileName);
+                hashManager.StrCode32LookupTable = MakeHashLookupTableFromFile(DefaultNameDictionaryFileName, FoxHash.Type.StrCode32);
+                hashManager.PathCode32LookupTable = MakeHashLookupTableFromFile(DefaultDataSetDictionaryFileName, FoxHash.Type.PathCode32);
             }
 
             List<string> files = new List<string>();
@@ -56,7 +59,8 @@ namespace LbaTool
                     {
                         LbaFile lba = ReadFromXml(lbaPath);
                         WriteToBinary(lba, Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(lbaPath)) + ".lba");
-                } else if (fileExtension.Equals(".lba", StringComparison.OrdinalIgnoreCase))
+                    }
+                    else if (fileExtension.Equals(".lba", StringComparison.OrdinalIgnoreCase))
                     {
                     Console.WriteLine(lbaPath);
                         LbaFile lba = ReadFromBinary(lbaPath, hashManager);
@@ -64,7 +68,6 @@ namespace LbaTool
                     {
                         var locatorNamesUnique = new HashSet<string>();
                         var dataSetsUnique = new HashSet<string>();
-                        var unknownUnique = new HashSet<string>();
                         foreach (var iLocator in lba.Locators) {
                             switch (lba.Type)
                             {
@@ -81,12 +84,7 @@ namespace LbaTool
                                 case LocatorType.Type3:
                                     var locatorT3 = iLocator as LocatorType3;
                                     locatorNamesUnique.Add(locatorT3.LocatorName.HashValue.ToString());
-                                    dataSetsUnique.Add(locatorT3.DataSet.HashValue.ToString());
-                                    //TODO: seperate?
-                                    unknownUnique.Add(locatorT3.Unknown30.HashValue.ToString());
-                                    unknownUnique.Add(locatorT3.Unknown31.HashValue.ToString());
-                                    unknownUnique.Add(locatorT3.Unknown32.HashValue.ToString());
-                                    unknownUnique.Add(locatorT3.Unknown33.HashValue.ToString());
+                                    dataSetsUnique.Add(locatorT3.DataSet.HashValue.ToString());                               
                                     break;
                                 default:
                                     break;
@@ -108,13 +106,6 @@ namespace LbaTool
                             string outputPath = Path.Combine(fileDirectory, string.Format("{0}_dataSetHashes.txt", Path.GetFileName(lbaPath)));
                             File.WriteAllLines(outputPath, hashes.ToArray());
                         }
-                        if (unknownUnique.Count > 0)
-                        {
-                            List<string> hashes = unknownUnique.ToList<string>();
-                            hashes.Sort();
-                            string outputPath = Path.Combine(fileDirectory, string.Format("{0}_unknownNameHashes.txt", Path.GetFileName(lbaPath)));
-                            File.WriteAllLines(outputPath, hashes.ToArray());
-                        }
                     } else
                     {
                         WriteToXml(lba, Path.Combine(Path.GetDirectoryName(lbaPath), Path.GetFileNameWithoutExtension(lbaPath) + ".lba.xml"));
@@ -126,12 +117,12 @@ namespace LbaTool
                 }
 
             // Write hash matches output
-            //WriteHashMatchesToFile(DefaultHashMatchOutputFileName, hashManager);
+            //WriteHashMatchesToFile(DefaultHashMatchOutputFileName, hashManager); //tex OFF
         }
 
         public static void WriteToBinary(LbaFile lba, string path)
         {
-            using (BinaryWriter writer = new BinaryWriter(new FileStream(path, FileMode.OpenOrCreate)))
+            using (BinaryWriter writer = new BinaryWriter(new FileStream(path, FileMode.Create)))
             {
                 lba.Write(writer);
             }
@@ -149,7 +140,8 @@ namespace LbaTool
 
         public static void WriteToXml(LbaFile lba, string path)
         {
-            XmlWriterSettings xmlWriterSettings = new XmlWriterSettings() {
+            XmlWriterSettings xmlWriterSettings = new XmlWriterSettings()
+            {
                 Encoding = Encoding.UTF8,
                 Indent = true
             };
@@ -161,7 +153,8 @@ namespace LbaTool
 
         public static LbaFile ReadFromXml(string path)
         {
-            XmlReaderSettings xmlReaderSettings = new XmlReaderSettings {
+            XmlReaderSettings xmlReaderSettings = new XmlReaderSettings
+            {
                 IgnoreWhitespace = true
             };
 
@@ -176,7 +169,7 @@ namespace LbaTool
         /// <summary>
         /// Opens a file containing one string per line, hashes each string, and adds each pair to a lookup table.
         /// </summary>
-        static Dictionary<uint, string> MakeHashLookupTableFromFile(string path)
+        private static Dictionary<uint, string> MakeHashLookupTableFromFile(string path, FoxHash.Type hashType)
         {
             ConcurrentDictionary<uint, string> table = new ConcurrentDictionary<uint, string>();
 
@@ -193,19 +186,27 @@ namespace LbaTool
             }
 
             // Hash entries
-            Parallel.ForEach(stringLiterals, delegate (string entry) {
-                uint hash = HashManager.HashString(entry);
+            Parallel.ForEach(stringLiterals, (string entry) =>
+            {
+                if (hashType == FoxHash.Type.StrCode32)
+                {
+                    uint hash = HashManager.StrCode32(entry);
+                    table.TryAdd(hash, entry);
+                }
+                else
+                {
+                    uint hash = HashManager.PathCode32(entry);
                 table.TryAdd(hash, entry);
+                }
             });
 
-            // Return lookup table
             return new Dictionary<uint, string>(table);
         }
 
         /// <summary>
         /// Outputs all hash matched strings to a file.
         /// </summary>
-        static void WriteHashMatchesToFile(string path, HashManager hashManager)
+        private static void WriteHashMatchesToFile(string path, HashManager hashManager)
         {
             using (StreamWriter file = new StreamWriter(path))
             {

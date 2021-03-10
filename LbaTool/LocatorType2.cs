@@ -29,13 +29,13 @@ namespace LbaTool
             Rotation.Write(writer);
         }
 
-        public void ReadFooter(BinaryReader reader, Dictionary<uint, string> hashLookupTable, HashIdentifiedDelegate hashIdentifiedCallback)
+        public void ReadFooter(BinaryReader reader, Dictionary<uint, string> nameLookupTable, Dictionary<uint, string> datasetLookupTable, HashIdentifiedDelegate hashIdentifiedCallback)
         {
-            LocatorName = new FoxHash();
-            LocatorName.Read(reader, hashLookupTable, hashIdentifiedCallback);
+            LocatorName = new FoxHash(FoxHash.Type.StrCode32);
+            LocatorName.Read(reader, nameLookupTable, hashIdentifiedCallback);
 
-            DataSet = new FoxHash();
-            DataSet.Read(reader, hashLookupTable, hashIdentifiedCallback);
+            DataSet = new FoxHash(FoxHash.Type.PathCode32);
+            DataSet.Read(reader, datasetLookupTable, hashIdentifiedCallback);
         }
 
         public void WriteFooter(BinaryWriter writer)
@@ -46,10 +46,10 @@ namespace LbaTool
 
         public void ReadXml(XmlReader reader)
         {
-            LocatorName = new FoxHash();
+            LocatorName = new FoxHash(FoxHash.Type.StrCode32);
             LocatorName.ReadXml(reader, "name");
 
-            DataSet = new FoxHash();
+            DataSet = new FoxHash(FoxHash.Type.PathCode32);
             DataSet.ReadXml(reader, "dataSet");
 
             reader.ReadStartElement("locator");
