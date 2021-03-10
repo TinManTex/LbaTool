@@ -11,7 +11,7 @@ namespace LbaTool
 {
     internal static class Program
     {
-    	//tex DEBUGNOW think through these names
+        //tex DEBUGNOW think through these names
         private const string DefaultNameDictionaryFileName = "lba_name_dictionary.txt";
         private const string DefaultDataSetDictionaryFileName = "lba_dataset_dictionary.txt";
         private const string DefaultHashMatchOutputFileName = "lba_hash_matches.txt";
@@ -34,14 +34,17 @@ namespace LbaTool
                 if (lbaPath.ToLower() == "-outputhashes" || lbaPath.ToLower() == "-o")
                 {
                     outputHashes = true;
-                } else
+                }
+                else
                 {
-                if (File.Exists(lbaPath))
-                {
-                    files.Add(lbaPath);
-                } else
+                    if (File.Exists(lbaPath))
                     {
-                        if (Directory.Exists(lbaPath)) {
+                        files.Add(lbaPath);
+                    }
+                    else
+                    {
+                        if (Directory.Exists(lbaPath))
+                        {
                             var dirFiles = Directory.GetFiles(lbaPath, "*.*", SearchOption.AllDirectories);
                             foreach (var file in dirFiles)
                             {
@@ -62,55 +65,58 @@ namespace LbaTool
                 }
                 else if (fileExtension.Equals(".lba", StringComparison.OrdinalIgnoreCase))
                 {
-                Console.WriteLine(lbaPath);
+                    Console.WriteLine(lbaPath);
                     LbaFile lba = ReadFromBinary(lbaPath, hashManager);
-                if (outputHashes)
-                {
-                    var locatorNamesUnique = new HashSet<string>();
-                    var dataSetsUnique = new HashSet<string>();
-                    foreach (var iLocator in lba.Locators) {
-                        switch (lba.Type)
+                    if (outputHashes)
+                    {
+                        var locatorNamesUnique = new HashSet<string>();
+                        var dataSetsUnique = new HashSet<string>();
+                        foreach (var iLocator in lba.Locators)
                         {
-                            case LocatorType.Type0:
-                                var locatorT0 = iLocator as LocatorType0;
+                            switch (lba.Type)
+                            {
+                                case LocatorType.Type0:
+                                    var locatorT0 = iLocator as LocatorType0;
 
-                                break;
-                            case LocatorType.Type2:
-                                var locatorT2 = iLocator as LocatorType2;
-                                    
-                                locatorNamesUnique.Add(locatorT2.LocatorName.HashValue.ToString());
-                                dataSetsUnique.Add(locatorT2.DataSet.HashValue.ToString());
-                                break;
-                            case LocatorType.Type3:
-                                var locatorT3 = iLocator as LocatorType3;
-                                locatorNamesUnique.Add(locatorT3.LocatorName.HashValue.ToString());
-                                dataSetsUnique.Add(locatorT3.DataSet.HashValue.ToString());                               
-                                break;
-                            default:
-                                break;
+                                    break;
+                                case LocatorType.Type2:
+                                    var locatorT2 = iLocator as LocatorType2;
+
+                                    locatorNamesUnique.Add(locatorT2.LocatorName.HashValue.ToString());
+                                    dataSetsUnique.Add(locatorT2.DataSet.HashValue.ToString());
+                                    break;
+                                case LocatorType.Type3:
+                                    var locatorT3 = iLocator as LocatorType3;
+                                    locatorNamesUnique.Add(locatorT3.LocatorName.HashValue.ToString());
+                                    dataSetsUnique.Add(locatorT3.DataSet.HashValue.ToString());
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+
+                        string fileDirectory = Path.GetDirectoryName(lbaPath);
+                        if (locatorNamesUnique.Count > 0)
+                        {
+                            List<string> hashes = locatorNamesUnique.ToList<string>();
+                            hashes.Sort();
+                            string outputPath = Path.Combine(fileDirectory, string.Format("{0}_locatorNameHashes.txt", Path.GetFileName(lbaPath)));
+                            File.WriteAllLines(outputPath, hashes.ToArray());
+                        }
+                        if (dataSetsUnique.Count > 0)
+                        {
+                            List<string> hashes = dataSetsUnique.ToList<string>();
+                            hashes.Sort();
+                            string outputPath = Path.Combine(fileDirectory, string.Format("{0}_dataSetHashes.txt", Path.GetFileName(lbaPath)));
+                            File.WriteAllLines(outputPath, hashes.ToArray());
                         }
                     }
-
-                    string fileDirectory = Path.GetDirectoryName(lbaPath);
-                    if (locatorNamesUnique.Count > 0)
+                    else
                     {
-                        List<string> hashes = locatorNamesUnique.ToList<string>();
-                        hashes.Sort();
-                        string outputPath = Path.Combine(fileDirectory, string.Format("{0}_locatorNameHashes.txt", Path.GetFileName(lbaPath)));
-                        File.WriteAllLines(outputPath, hashes.ToArray());
+                        WriteToXml(lba, Path.Combine(Path.GetDirectoryName(lbaPath), Path.GetFileNameWithoutExtension(lbaPath) + ".lba.xml"));
                     }
-                    if (dataSetsUnique.Count > 0)
-                    {
-                        List<string> hashes = dataSetsUnique.ToList<string>();
-                        hashes.Sort();
-                        string outputPath = Path.Combine(fileDirectory, string.Format("{0}_dataSetHashes.txt", Path.GetFileName(lbaPath)));
-                        File.WriteAllLines(outputPath, hashes.ToArray());
-                    }
-                } else
-                {
-                    WriteToXml(lba, Path.Combine(Path.GetDirectoryName(lbaPath), Path.GetFileNameWithoutExtension(lbaPath) + ".lba.xml"));
                 }
-            } else
+                else
                 {
                     throw new IOException("Unrecognized input type.");
                 }
@@ -196,7 +202,7 @@ namespace LbaTool
                 else
                 {
                     uint hash = HashManager.PathCode32(entry);
-                table.TryAdd(hash, entry);
+                    table.TryAdd(hash, entry);
                 }
             });
 
